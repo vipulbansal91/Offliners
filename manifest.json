@@ -15,6 +15,7 @@
     "storage",
     "tabs",
     "downloads",
+    "downloads.open",
     "pageCapture"
   ],
   "background": {

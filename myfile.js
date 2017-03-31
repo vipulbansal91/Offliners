@@ -1,4 +1,14 @@
 // var greeting = "hola, ";
+
+chrome.storage.local.get('data', function(data) {
+	console.log('Inside content script : ', data.data);
+	data.data.some(function(linkObj) {
+		if (linkObj.url === document.location.href) {
+			// Fire event with the downloadId to search and download this file.
+		}
+	});
+});
+
 var title = document.getElementById("articleTitle");
 // document.querySelector('articleTitle')
 title.innerHTML = '<button id="saveOfflineButton">Save</button>' + title.innerHTML;

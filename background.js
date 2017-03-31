@@ -50,11 +50,13 @@ function doneSaving() {
 	});
 }
 
-function createLinkObjectToStore(url, filename) {
+function createLinkObjectToStore(url, filename, downloadId) {
+	// console.log(url);
 	return {
 		url: url,
 		name: url,
-		location: filename
+		location: filename,
+		downloadId: downloadId
 	};
 }
 
@@ -72,6 +74,7 @@ function saveLinkToStorage(linkObj) {
 }
 
 function savePage(tabUrl, index, array, cb) {
+	// var prevDownloadId;
 	chrome.tabs.create({'url': tabUrl}, function(tab) {
 		setTimeout(function() {
 		    chrome.pageCapture.saveAsMHTML({
@@ -83,8 +86,19 @@ function savePage(tabUrl, index, array, cb) {
 	        chrome.downloads.download({
 	            url: url,
 	            filename: filename
-	        }, function() {
-	        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename));
+	        }, function(downloadId) {
+	        	// console.log(downloadId, prevDownloadId);
+
+	        	// if (prevDownloadId) {
+		        // 	chrome.downloads.search({
+		        // 		id: prevDownloadId
+		        // 	}, function(results) {
+		        // 		console.log(results);
+		        // 	});
+	        	// }
+
+	        	// prevDownloadId = downloadId;
+	        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId));
 		        chrome.tabs.remove(tab.id); // to close the tab
 	        	if (!array || !cb) {
 	        		return;
@@ -94,7 +108,7 @@ function savePage(tabUrl, index, array, cb) {
 	        	}
 	        	else {
 	        		console.log('Done all calls');
-	        		console.log(array, index, cb);
+	        		// console.log(array, index, cb);
 	        		doneSaving();
 	        	}
 	        });
