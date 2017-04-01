@@ -25,7 +25,7 @@ document.getElementById('saveOfflineButton').addEventListener('click', function(
 	// alert('Sending message: ', data.nestedLinks);
 	console.log(data);
 	chrome.runtime.sendMessage(data, function(response) {
-		alert('done');
+		//alert('done');
 	});
 });
 
