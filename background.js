@@ -2,6 +2,7 @@
 
 var tabsToSave = [];
 var tabsToClose = [];
+var trackedDownloadIds = [];
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
@@ -56,7 +57,7 @@ chrome.runtime.onMessage.addListener(
 
 function doneSaving() {
 	chrome.storage.local.get('data', function(data) {
-		console.log(data.data);
+		//console.log(data.data);
 	});
 }
 
@@ -105,7 +106,7 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 	        	tabId: tab.id
 		    }, 	function(blob) {
 		        var url = URL.createObjectURL(blob);
-				console.log('url: ', url);
+				//console.log('url: ', url);
 				var filename = tabUrl.slice(31).replace('/', '.') + '.mhtml';
 
 		        chrome.downloads.download({
@@ -158,6 +159,45 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
         
     }
 });
+
+chrome.downloads.onChanged.addListener(function(downloadDelta) {
+	if (downloadDelta.state && downloadDelta.state.current == "complete") {
+			chrome.downloads.search({
+				id: downloadDelta.id
+			}, function(results) {
+				updateFileNameInLocalStorage(downloadDelta.id, results[0].filename);
+			});
+	}
+});
+
+function getDownloadFileName(downloadId) {
+	chrome.downloads.search({
+		id: downloadId
+	}, function(results) {
+		console.log(results[0]);
+		console.log(results[0].filename);
+		return results[0].filename;
+	});
+}
+
+function updateFileNameInLocalStorage(downloadId, filename) {
+	console.log(downloadId + " " + filename);
+
+	chrome.storage.local.get('data', function(data) {
+		
+		data.data.forEach(function(linkObject, index) {
+			if (linkObject.downloadId == downloadId) {
+				console.log(linkObject.downloadId + " " + filename);
+				linkObject.filename = filename;
+			}
+		});
+
+		console.log(data.data);
+
+		chrome.storage.local.set({'data': result});
+
+	});
+}
 
 function flushHttpOrHttps(url) {
 	return url.substring(url.indexOf(":") + 1);
