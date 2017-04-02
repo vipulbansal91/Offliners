@@ -2,23 +2,66 @@ var tabsToSave = [];
 var tabsToClose = [];
 var trackedDownloadIds = [];
 
+Array.prototype.forEachDone = function(fn, scope, lastfn) {
+    for(var i = 0, c = 0, len = this.length; i < len; i++) {
+        fn.call(scope, this[i], i, this, function() {
+            ++c === len && lastfn();
+        });
+    }
+};
+
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     console.log(sender.tab ?
                 "from a content script:" + sender.tab.url:
                 "from the extension");
-    console.log(sender.tab);
-    var linksToSave = request.links;
-    console.log(linksToSave);
+    var linksToSave = [];
+    console.log(request.links);
 
-    var link = linksToSave[0];
+    request.links.forEachDone(function(link, i, arr, done){
 
-    linksToSave.forEach(function(link, index) {
-      console.log('Calling savePages with link: ', link);
-    	savePages(link);
-    });
+    	console.log(link);
 
-	doneSaving();
+    	chrome.storage.local.get('data', function(data) {
+
+    		if (link.includes("w.amazon.com") && (link.includes("&action=edit&section=")) == false) {
+    			found = false;
+
+				  console.log(data.data);
+          if (data.data) {
+				    data.data.forEach(function(linkObject, index) {
+
+					    if (linkObject.url === link) {
+						    found = true;
+					    }
+				    });
+          }
+
+
+				console.log(found);
+
+				if (found === false) {
+					linksToSave.push(link);
+				}
+
+				console.log(linksToSave);
+    		}
+
+    		done()
+
+		});
+
+
+	}, this, function() {
+	    console.log(linksToSave);
+	    
+	    linksToSave.forEach(function(link, index) {
+    		savePages(link);
+    	});
+
+		doneSaving();
+	});
+
 
   });
 
@@ -119,7 +162,6 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
         }
 
         return;
-        
     }
 });
 
@@ -132,6 +174,7 @@ chrome.downloads.onChanged.addListener(function(downloadDelta) {
 			});
 	}
 });
+
 
 function getDownloadFileName(downloadId) {
 	chrome.downloads.search({
@@ -148,6 +191,7 @@ function updateFileNameInLocalStorage(downloadId, filename) {
 
 	chrome.storage.local.get('data', function(data) {
     console.log('data: ', data.data);
+    if (data.data) {
 		data.data.some(function(linkObject, index) {
       // console.log('Found');
 			if (linkObject.downloadId == downloadId) {
@@ -156,6 +200,7 @@ function updateFileNameInLocalStorage(downloadId, filename) {
         return true;
 			}
 		});
+    }
 
 		console.log(data.data);
 
