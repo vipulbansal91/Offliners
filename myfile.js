@@ -1,9 +1,8 @@
 (function isAlreadySaved() {
-
-  function saveOrUpdate() {
+  function save() {
     var nestedLinks = document.querySelectorAll('#articleContent a');
     if (nestedLinks.length === 0) {
-      nestedLinks = document.querySelectorAll('.wikicreatelink a, a.external');
+      nestedLinks = document.querySelectorAll('.wikicreatelink a, a.external, .wikilink a');
     }
     console.log(nestedLinks);
     var linksResult = [];
@@ -48,15 +47,14 @@
       data.data.some(function(linkObj) {
         if (document.location.href === linkObj.url) {
           downloadId = linkObj.downloadId;
-          title.innerHTML = '<button id="updateButton">Update</button>' + title.innerHTML;
-          document.getElementById('updateButton').addEventListener('click', saveOrUpdate);
+          title.innerHTML = '<button id="saveOfflineButton" style="background: green; border: none; color: white; border-radius: 3px;" disabled="true">Saved</button>' + title.innerHTML;
           return true;
         }
       });
     }
     if (!downloadId) {
       title.innerHTML = '<button id="saveOfflineButton">Save</button>' + title.innerHTML;
-      document.getElementById('saveOfflineButton').addEventListener('click', saveOrUpdate);
+      document.getElementById('saveOfflineButton').addEventListener('click', save);
     }
   });
 })();
