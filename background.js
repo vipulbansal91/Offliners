@@ -4,33 +4,57 @@ var tabsToSave = [];
 var tabsToClose = [];
 var trackedDownloadIds = [];
 
+Array.prototype.forEachDone = function(fn, scope, lastfn) {
+    for(var i = 0, c = 0, len = this.length; i < len; i++) {
+        fn.call(scope, this[i], i, this, function() {
+            ++c === len && lastfn();
+        });
+    }
+};
+
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     console.log(sender.tab ?
                 "from a content script:" + sender.tab.url:
                 "from the extension");
     console.log(sender.tab);
-    // chrome.downloads.download({
-    // 	url: sender.tab.url,
-    // 	filename: 'xyz'
-    // });
-   // savePage(sender.tab.url);
-    var linksToSave = request.links;
-    console.log(linksToSave);
 
-    var link = linksToSave[0];
-    // var index = -1;
+    var linksToSave = [];//filterLinks(request.links);
 
-	//chrome.tabs.create({'url': link}, function(tab) {
-	//savePage(link, 0, linksToSave, savePage);
-	// });
+    request.links.forEachDone(function(link, i, arr, done){
 
-    linksToSave.forEach(function(link, index) {
-      console.log('Calling savePages with link: ', link);
-    	savePages(link);
-    });
+    	if (link.includes("w.amazon.com")) {
+    		
+    		chrome.storage.local.get('data', function(data) {
+			
+				found = false;
 
-	doneSaving();
+				data.data.forEach(function(linkObject, index) {
+
+					if (linkObject.url === link) {
+						found = true;
+					}
+				});
+
+				if (found === false) {
+					linksToSave.push(link);
+				}
+
+				done()
+
+			});
+    	}
+
+	}, this, function() {
+	    console.log(linksToSave);
+	    
+	    linksToSave.forEach(function(link, index) {
+    		savePages(link);
+    	});
+
+		doneSaving();
+	});
+
 
     // for(var i = 0; i < linksToSave.length; i++) {
     // 	// if (index )
@@ -55,6 +79,8 @@ chrome.runtime.onMessage.addListener(
     // chrome.pageCapture
     // console.log(request.links, sender);
   });
+
+
 
 function doneSaving() {
 	chrome.storage.local.get('data', function(data) {
@@ -175,6 +201,46 @@ chrome.downloads.onChanged.addListener(function(downloadDelta) {
 			});
 	}
 });
+
+function filterLinks(linksToSave) {
+	var newLinksToSave = [];
+
+	linksToSave.forEach(function(link, index) {
+		newLinksToSave.push(link);
+	});
+
+	console.log(linksToSave.toString());
+
+	for (var i = 0; i < linksToSave.length; i++) {
+		Things[i]
+	}
+
+	linksToSave.forEach(function(link, index) {
+		
+		chrome.storage.local.get('data', function(data) {
+			console.log(data.data);
+
+			data.data.some(function(linkObject, index) {
+
+				//console.log(link + " " + linkObject.url);
+
+				if (linkObject.url === link) {
+					console.log("Clearing " + linkObject.url + " " + link);
+					newLinksToSave.splice(newLinksToSave.indexOf(link), 1);
+					return true;
+				}
+			});
+		});
+
+	});
+
+
+
+	console.log(newLinksToSave.toString());
+
+	return newLinksToSave;
+}
+
 
 function getDownloadFileName(downloadId) {
 	chrome.downloads.search({
