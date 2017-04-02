@@ -10,13 +10,13 @@ document.getElementById('saveOfflineButton').addEventListener('click', function(
 	// alert('Clicked me');
 	var nestedLinks = document.querySelectorAll('#articleContent a');
 	var linksResult = [];
+	linksResult.push(document.location.href);
+
 	nestedLinks.forEach(function(link) {
 		if (linksResult.indexOf(link.href) === -1) {
 			linksResult.push(link.href);
 		}
 	});
-
-	linksResult.push(document.location.href);
 
 	linksResult = filterHash(linksResult);
 

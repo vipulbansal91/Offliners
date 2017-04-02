@@ -1,6 +1,7 @@
 var tabsToSave = [];
 var tabsToClose = [];
 var trackedDownloadIds = [];
+var parentUrls = [];
 
 Array.prototype.forEachDone = function(fn, scope, lastfn) {
     for(var i = 0, c = 0, len = this.length; i < len; i++) {
@@ -17,6 +18,8 @@ chrome.runtime.onMessage.addListener(
                 "from the extension");
     var linksToSave = [];
     console.log(request.links);
+
+    parentUrls.push(request.links[0]);
 
     request.links.forEachDone(function(link, i, arr, done){
 
@@ -64,14 +67,16 @@ chrome.runtime.onMessage.addListener(
   });
 
 
-function createLinkObjectToStore(url, filename, downloadId, blob) {
-	// console.log(url);
+function createLinkObjectToStore(url, filename, downloadId, blob, isParent) {
+	console.log(url, isParent);
+	
 	return {
 		url: url,
 		name: url,
 		location: filename,
 		downloadId: downloadId,
-    blob: blob
+		blob: blob,
+		isParent : isParent
 	};
 }
 
@@ -152,9 +157,9 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 		        		tabsToClose.splice(tabsToClose.indexOf(tabId),1);
 		        	}
 
-              console.log('Saving to storage: ', tabUrl, filename);
+              		console.log('Saving to storage: ', tabUrl, filename);
 
-		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, btoa(blob)));
+		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, btoa(blob), isUrlParent(tabUrl)));
 		        });
 		    });
         }
@@ -162,6 +167,18 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
         return;
     }
 });
+
+function isUrlParent(url) {
+	isParent = false
+
+	if (parentUrls.indexOf(url) > -1) {
+		isParent = true;
+
+		parentUrls.splice(parentUrls.indexOf(url), 1);
+	}
+
+	return isParent;
+}
 
 chrome.downloads.onChanged.addListener(function(downloadDelta) {
 	if (downloadDelta.state && downloadDelta.state.current == "complete") {
