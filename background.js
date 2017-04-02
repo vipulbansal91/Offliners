@@ -17,17 +17,21 @@ chrome.runtime.onMessage.addListener(
     console.log(sender.tab ?
                 "from a content script:" + sender.tab.url:
                 "from the extension");
-    console.log(sender.tab);
+    //console.log(sender.tab);
 
     var linksToSave = [];//filterLinks(request.links);
+    console.log(request.links);
 
     request.links.forEachDone(function(link, i, arr, done){
 
-    	if (link.includes("w.amazon.com")) {
-    		
-    		chrome.storage.local.get('data', function(data) {
-			
-				found = false;
+    	console.log(link);
+
+    	chrome.storage.local.get('data', function(data) {
+
+    		if (link.includes("w.amazon.com") && (link.includes("&action=edit&section=")) == false) {
+    			found = false;
+
+				console.log(data.data);
 
 				data.data.forEach(function(linkObject, index) {
 
@@ -36,14 +40,19 @@ chrome.runtime.onMessage.addListener(
 					}
 				});
 
+				console.log(found);
+
 				if (found === false) {
 					linksToSave.push(link);
 				}
 
-				done()
+				console.log(linksToSave);
+    		}
 
-			});
-    	}
+    		done()
+
+		});
+
 
 	}, this, function() {
 	    console.log(linksToSave);
