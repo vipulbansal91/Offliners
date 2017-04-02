@@ -1,6 +1,6 @@
 // var greeting = "hola, ";
 
-console.log('Inside contetn script');
+// console.log('Inside contetn script');
 
 
 var title = document.getElementById("articleTitle");

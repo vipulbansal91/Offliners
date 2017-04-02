@@ -58,22 +58,20 @@ chrome.runtime.onMessage.addListener(
 	    linksToSave.forEach(function(link, index) {
     		savePages(link);
     	});
-
-		doneSaving();
 	});
 
 
   });
 
 
-function createLinkObjectToStore(url, filename, downloadId, blob) {
+function createLinkObjectToStore(url, filename, downloadId, pageTitle) {
 	// console.log(url);
 	return {
 		url: url,
 		name: url,
 		location: filename,
 		downloadId: downloadId,
-    blob: blob
+    pageTitle: pageTitle
 	};
 }
 
@@ -116,6 +114,13 @@ function openFileURLInTab(fileUrl, tabId) {
   chrome.tabs.update(tabId, {url: fileUrl});
 }
 
+function stripTitle(title) {
+  if (title.lastIndexOf('/') !== -1) {
+    title = title.substr(title.lastIndexOf('/') + 1);
+  }
+  return title.substr(0, title.lastIndexOf('-') - 1);
+}
+
 chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
   console.log('Inside on updated');
   if (!navigator.onLine) {
@@ -138,7 +143,8 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
         	chrome.pageCapture.saveAsMHTML({
 	        	tabId: tab.id
 		      }, 	function(blob) {
-            console.log(blob);
+            var pageTitle = stripTitle(tab.title);
+            console.log('pageTitle: ', pageTitle);
 		        var url = URL.createObjectURL(blob);
 				//console.log('url: ', url);
 				  var filename = Math.random().toString(36).slice(2) + '.mhtml';
@@ -156,7 +162,7 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 
               console.log('Saving to storage: ', tabUrl, filename);
 
-		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, btoa(blob)));
+		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, pageTitle));
 		        });
 		    });
         }

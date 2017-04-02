@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
   chrome.storage.local.get('data', function(data) {
     console.log('Fetching data:', data.data);
     data.data.forEach(function(linkObj) {
-      document.getElementById('links').innerHTML += ('<a style="display: block; margin: 3px;" target="_blank" href="file://' + linkObj.filename + '">' + linkObj.name + '</a>');
+      document.getElementById('links').innerHTML += ('<a style="display: block; margin: 3px;" target="_blank" href="file://' + linkObj.filename + '">' + linkObj.pageTitle + '</a><hr>');
     });
     // document.getElementById('links').textContent = ;
   });
