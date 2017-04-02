@@ -70,7 +70,6 @@ chrome.runtime.onMessage.addListener(
 function createLinkObjectToStore(url, filename, downloadId, pageTitle, isParent) {
   return {
     url: url,
-    name: url,
     location: filename,
     downloadId: downloadId,
     pageTitle: pageTitle,
