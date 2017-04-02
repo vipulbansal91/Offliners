@@ -16,7 +16,9 @@
     "tabs",
     "downloads",
     "downloads.open",
-    "pageCapture"
+    "pageCapture",
+    "<all_urls>",
+    "unlimitedStorage"
   ],
   "background": {
     "scripts": ["background.js"]

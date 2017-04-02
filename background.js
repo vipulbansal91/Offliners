@@ -1,5 +1,3 @@
-// alert('background.js')
-
 var tabsToSave = [];
 var tabsToClose = [];
 var trackedDownloadIds = [];
@@ -10,20 +8,10 @@ chrome.runtime.onMessage.addListener(
                 "from a content script:" + sender.tab.url:
                 "from the extension");
     console.log(sender.tab);
-    // chrome.downloads.download({
-    // 	url: sender.tab.url,
-    // 	filename: 'xyz'
-    // });
-   // savePage(sender.tab.url);
     var linksToSave = request.links;
     console.log(linksToSave);
 
     var link = linksToSave[0];
-    // var index = -1;
-
-	//chrome.tabs.create({'url': link}, function(tab) {
-	//savePage(link, 0, linksToSave, savePage);
-	// });
 
     linksToSave.forEach(function(link, index) {
       console.log('Calling savePages with link: ', link);
@@ -32,43 +20,17 @@ chrome.runtime.onMessage.addListener(
 
 	doneSaving();
 
-    // for(var i = 0; i < linksToSave.length; i++) {
-    // 	// if (index )
-    // 	var link = linksToSave[i];
-    // 	chrome.tabs.create({'url': link}, function(tab) {
-    // 		console.log('opened new tab');
-    // 		// savePage(tab.id, link, saveNext(link, index));
-
-	   //  // setTimeout(function() {
-	   //  // 	// var link = linksToSave[i];
-	   //  // 	// chrome.tabs.create({'url': link}, function(tab) {
-	   //  // 	// 	console.log('opened new tab');
-	   //  // 	// 	savePage(tab.id, link);
-		  //  //  	// setTimeout(function() {
-
-		  //  //  	// },);
-		  //  //  	// chrome.tabs.remove(tab.id);
-	   //  // 	});
-	   //  // }, 3000);
-    // });
-    // }
-    // chrome.pageCapture
-    // console.log(request.links, sender);
   });
 
-function doneSaving() {
-	chrome.storage.local.get('data', function(data) {
-		//console.log(data.data);
-	});
-}
 
-function createLinkObjectToStore(url, filename, downloadId) {
+function createLinkObjectToStore(url, filename, downloadId, blob) {
 	// console.log(url);
 	return {
 		url: url,
 		name: url,
 		location: filename,
-		downloadId: downloadId
+		downloadId: downloadId,
+    blob: blob
 	};
 }
 
@@ -76,7 +38,7 @@ function saveLinkToStorage(linkObj) {
 	chrome.storage.local.get('data', function(res) {
 		console.log(res.data);
 		if (res && res.data) {
-			result = res.data;			
+			result = res.data;
 		} else {
 			result = [];
 		}
@@ -92,11 +54,35 @@ function savePages(tabUrl) {
 	});
 }
 
+function searchAndGetURLFromStore(url, tabId) {
+  chrome.storage.local.get('data', function(data) {
+    if (data.data) {
+	    data.data.some(function(linkObj) {
+		    if (linkObj.url === url) {
+          console.log('URL Matched, linkObj: ', linkObj);
+          openFileURLInTab("file://" + linkObj.filename, tabId);
+          return true;
+		    }
+	    });
+    }
+  });
+}
+
+function openFileURLInTab(fileUrl, tabId) {
+  console.log('This url to open: ', fileUrl);
+  chrome.tabs.update(tabId, {url: fileUrl});
+}
+
 chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
+  console.log('Inside on updated');
+  if (!navigator.onLine) {
+    var fileURL = searchAndGetURLFromStore(tab.url, tabId);
+  } else {
+    console.log('Online');
+  }
     if (info.status == "complete") {
         // your code ...
         var tabUrl = tab.url;
-        
         console.log(tabUrl + " got fully loaded");
 
       console.log('tabsToSave', 'tabsToClose');
@@ -108,10 +94,11 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 
         	chrome.pageCapture.saveAsMHTML({
 	        	tabId: tab.id
-		    }, 	function(blob) {
+		      }, 	function(blob) {
+            console.log(blob);
 		        var url = URL.createObjectURL(blob);
 				//console.log('url: ', url);
-				var filename = tabUrl.slice(31).replace('/', '.') + '.mhtml';
+				  var filename = Math.random().toString(36).slice(2) + '.mhtml';
 
 		        chrome.downloads.download({
 		            url: url,
@@ -126,37 +113,7 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 
               console.log('Saving to storage: ', tabUrl, filename);
 
-		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId));		        	
-
-		        	if (tabsToSave.length == 0) {
-		        		doneSaving();
-		        	}
-
-
-		        	// console.log(downloadId, prevDownloadId);
-
-		        	// if (prevDownloadId) {
-			        // 	chrome.downloads.search({
-			        // 		id: prevDownloadId
-			        // 	}, function(results) {
-			        // 		console.log(results);
-			        // 	});
-		        	// }
-
-		        	// prevDownloadId = downloadId;
-		        	// 
-			        
-		        	// if (!array || !cb) {
-		        	// 	return;
-		        	// }
-		        	// if (index < array.length) {
-		        	// 	cb(array[index], ++index, array, cb);
-		        	// }
-		        	// else {
-		        	// 	console.log('Done all calls');
-		        	// 	// console.log(array, index, cb);
-		        	// 	doneSaving();
-		        	// }
+		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, btoa(blob)));
 		        });
 		    });
         }
@@ -187,20 +144,22 @@ function getDownloadFileName(downloadId) {
 }
 
 function updateFileNameInLocalStorage(downloadId, filename) {
-	console.log(downloadId + " " + filename);
+	console.log('Updating location for file: ', downloadId + " " + filename);
 
 	chrome.storage.local.get('data', function(data) {
-		
-		data.data.forEach(function(linkObject, index) {
+    console.log('data: ', data.data);
+		data.data.some(function(linkObject, index) {
+      // console.log('Found');
 			if (linkObject.downloadId == downloadId) {
 				console.log(linkObject.downloadId + " " + filename);
 				linkObject.filename = filename;
+        return true;
 			}
 		});
 
 		console.log(data.data);
 
-		chrome.storage.local.set({'data': result});
+		chrome.storage.local.set({'data': data.data});
 
 	});
 }
