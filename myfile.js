@@ -4,6 +4,7 @@ chrome.storage.local.get('data', function(data) {
 	console.log('Inside content script : ', data.data);
 	data.data.some(function(linkObj) {
 		if (linkObj.url === document.location.href) {
+      console.log('URL Matched: ', linkObj.url);
 			// Fire event with the downloadId to search and download this file.
 		}
 	});

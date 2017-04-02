@@ -26,6 +26,7 @@ chrome.runtime.onMessage.addListener(
 	// });
 
     linksToSave.forEach(function(link, index) {
+      console.log('Calling savePages with link: ', link);
     	savePages(link);
     });
 
@@ -86,8 +87,8 @@ function saveLinkToStorage(linkObj) {
 
 function savePages(tabUrl) {
 	chrome.tabs.create({'url': tabUrl, 'active': false}, function(tab) {
-		tabsToSave.push(flushHttpOrHttps(tabUrl));
-		tabsToClose.push(flushHttpOrHttps(tabUrl));
+		tabsToSave.push(tab.id);
+		tabsToClose.push(tab.id);
 	});
 }
 
@@ -98,9 +99,12 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
         
         console.log(tabUrl + " got fully loaded");
 
-        if (tabsToSave.indexOf(flushHttpOrHttps(tabUrl)) > -1) {
+      console.log('tabsToSave', 'tabsToClose');
+      console.log('Got tabUrl: ', tabUrl);
+      console.log(tabsToSave.toString(), tabsToClose.toString());
+        if (tabsToSave.indexOf(tabId) > -1) {
 
-        	tabsToSave.splice(tabsToSave.indexOf(flushHttpOrHttps(tabUrl)),1);
+        	tabsToSave.splice(tabsToSave.indexOf(tabId),1);
 
         	chrome.pageCapture.saveAsMHTML({
 	        	tabId: tab.id
@@ -114,11 +118,13 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 		            filename: filename
 		        }, function(downloadId) {
 
-		        	if (tabsToClose.indexOf(flushHttpOrHttps(tabUrl)) > -1) {
+		        	if (tabsToClose.indexOf(tabId) > -1) {
 
 		        		chrome.tabs.remove(tab.id); // to close the tab
-		        		tabsToClose.splice(tabsToClose.indexOf(flushHttpOrHttps(tabUrl)),1);
+		        		tabsToClose.splice(tabsToClose.indexOf(tabId),1);
 		        	}
+
+              console.log('Saving to storage: ', tabUrl, filename);
 
 		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId));		        	
 
