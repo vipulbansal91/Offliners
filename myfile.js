@@ -15,6 +15,11 @@ document.getElementById('saveOfflineButton').addEventListener('click', function(
 			linksResult.push(link.href);
 		}
 	});
+
+	linksResult.push(document.location.href);
+
+	linksResult = filterHash(linksResult);
+
 	var data = {links: linksResult};
 	// alert('Sending message: ', data.nestedLinks);
 	console.log(data);
@@ -22,6 +27,24 @@ document.getElementById('saveOfflineButton').addEventListener('click', function(
 		//alert('done');
 	});
 });
+
+function filterHash(links) {
+	var newLinks = [];
+
+	links.forEach(function(link, index) {
+		if (link.indexOf('#') > -1) {
+			link = link.substring(0, link.indexOf('#'));
+		}
+
+		newLinks.push(link)
+	});
+
+	return newLinks.filter(onlyUnique);
+}
+
+function onlyUnique(value, index, self) { 
+    return self.indexOf(value) === index;
+}
 
 
 // chrome.runtime.sendMessage({links: linksResult}, function(response) {

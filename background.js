@@ -58,8 +58,6 @@ chrome.runtime.onMessage.addListener(
 	    linksToSave.forEach(function(link, index) {
     		savePages(link);
     	});
-
-		doneSaving();
 	});
 
 
