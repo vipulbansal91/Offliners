@@ -1,6 +1,7 @@
 var tabsToSave = [];
 var tabsToClose = [];
 var trackedDownloadIds = [];
+var parentUrls = [];
 
 Array.prototype.forEachDone = function(fn, scope, lastfn) {
     for(var i = 0, c = 0, len = this.length; i < len; i++) {
@@ -17,6 +18,8 @@ chrome.runtime.onMessage.addListener(
                 "from the extension");
     var linksToSave = [];
     console.log(request.links);
+
+    parentUrls.push(request.links[0]);
 
     request.links.forEachDone(function(link, i, arr, done){
 
@@ -64,14 +67,14 @@ chrome.runtime.onMessage.addListener(
   });
 
 
-function createLinkObjectToStore(url, filename, downloadId, pageTitle) {
-	// console.log(url);
+function createLinkObjectToStore(url, filename, downloadId, pageTitle, isParent) {
 	return {
 		url: url,
 		name: url,
 		location: filename,
 		downloadId: downloadId,
-    pageTitle: pageTitle
+    pageTitle: pageTitle,
+		isParent : isParent
 	};
 }
 
@@ -147,7 +150,7 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
             console.log('pageTitle: ', pageTitle);
 		        var url = URL.createObjectURL(blob);
 				//console.log('url: ', url);
-				  var filename = Math.random().toString(36).slice(2) + '.mhtml';
+				  var filename = 'Offliners/' + Math.random().toString(36).slice(2) + '.mhtml';
 
 		        chrome.downloads.download({
 		            url: url,
@@ -160,9 +163,9 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
 		        		tabsToClose.splice(tabsToClose.indexOf(tabId),1);
 		        	}
 
-              console.log('Saving to storage: ', tabUrl, filename);
+              		console.log('Saving to storage: ', tabUrl, filename);
 
-		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, pageTitle));
+		        	saveLinkToStorage(createLinkObjectToStore(tabUrl, filename, downloadId, pageTitle, isUrlParent(tabUrl)));
 		        });
 		    });
         }
@@ -170,6 +173,18 @@ chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
         return;
     }
 });
+
+function isUrlParent(url) {
+	isParent = false
+
+	if (parentUrls.indexOf(url) > -1) {
+		isParent = true;
+
+		parentUrls.splice(parentUrls.indexOf(url), 1);
+	}
+
+	return isParent;
+}
 
 chrome.downloads.onChanged.addListener(function(downloadDelta) {
 	if (downloadDelta.state && downloadDelta.state.current == "complete") {
