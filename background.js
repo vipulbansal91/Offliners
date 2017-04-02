@@ -126,7 +126,11 @@ function stripTitle(title) {
 chrome.tabs.onUpdated.addListener(function(tabId , info, tab) {
   console.log('Inside on updated');
   if (!navigator.onLine) {
-    var fileURL = searchAndGetURLFromStore(tab.url, tabId);
+    var link = tab.url;
+    if (link.indexOf('#') > -1) {
+      link = link.substring(0, link.indexOf('#'));
+    }
+    var fileURL = searchAndGetURLFromStore(link, tabId);
   } else {
     console.log('Online');
   }
